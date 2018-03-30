@@ -42,7 +42,7 @@ main = return ()
 
 multOrder v m = fst . head . filter (\(k, x) -> x == 1 || x == 0) $ ls
   where
-    ls = fmap (\k -> (k, v^k `mod` m)) $ [1..]
+    ls = (\k -> (k, v^k `mod` m)) <$> [1..]
 
 maybeMultOrder v m
   | not $ areCoprime v m  = Nothing
@@ -55,13 +55,13 @@ areCoprime a b = gcd a b == 1
 -- Instead of simply checking if the xth root of n is integer,
 -- the number is rounded and elevated to the xth power to overcome
 -- the approximation and quantization error of floats.
-isPerfectPower n = not . null . filter (\(b, a) -> (round a) ^ b == n) $ bases
+isPerfectPower n = any (\(b, a) -> round a ^ b == n) bases
   where
     maxBound = floor . logBase 2 . fromIntegral $ n
-    bases = fmap (\x -> (round x, (fromIntegral n) ** (1 / x))) $ [2 .. fromIntegral maxBound]
+    bases = (\x -> (round x, fromIntegral n ** (1 / x))) <$> [2 .. fromIntegral maxBound]
 
 
-smallestR n = fst . head . filter (\(r, Just k) -> k > floor ((logBase 2 (fromIntegral n)) ^ 2)) . fmap (\r -> (r, maybeMultOrder n r)) $ [x | x<-[1..], gcd x n == 1]
+smallestR n = fst . head . filter (\(r, Just k) -> k > floor (logBase 2 (fromIntegral n) ^ 2)) . fmap (\r -> (r, maybeMultOrder n r)) $ [x | x<-[1..], gcd x n == 1]
 
 eulerTotient n = length [x | x <- [1..n], gcd n x == 1]
 
@@ -71,7 +71,7 @@ data Poly a = LittlePoly [a] | BigPoly [a] deriving (Eq, Show)
 degPoly (LittlePoly ls) = max 0 $ length ls - 1
 degPoly (BigPoly ls) = max 0 $ length ls - 1
 
-reverseEndianness (LittlePoly ls) = BigPoly . reverse $ ls
+reverseendianness (LittlePoly ls) = BigPoly . reverse $ ls
 reverseEndianness (BigPoly ls) = LittlePoly . reverse $ ls
 
 -- | Most significant coefficient
@@ -97,7 +97,7 @@ negatePoly p = negate <$> p
 
 addList l [] = l
 addList [] l = l
-addList (l:ls) (l':ls') = (l + l'):(addList ls ls')
+addList (l:ls) (l':ls') = (l + l'):addList ls ls'
 
 diffPoly p = addPoly p . negatePoly
 
@@ -108,7 +108,7 @@ extractMSCoeff (BigPoly ls) = BigPoly (tail ls)
 
 scalePoly scalar = fmap (scalar *)
 
-instance Functor (Poly) where
+instance Functor Poly where
   fmap f (LittlePoly ls) = LittlePoly (fmap f ls)
   fmap f (BigPoly ls) = BigPoly (fmap f ls)
 
