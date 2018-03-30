@@ -52,7 +52,9 @@ maybeMultOrder v m
 
 areCoprime a b = gcd a b == 1
 
--- Instead of simply checking if the xth root of n is integer, the number is rounded and elevated to the xth power to overcome the approximations and quantization error of floats.
+-- Instead of simply checking if the xth root of n is integer,
+-- the number is rounded and elevated to the xth power to overcome
+-- the approximation and quantization error of floats.
 isPerfectPower n = not . null . filter (\(b, a) -> (round a) ^ b == n) $ bases
   where
     maxBound = floor . logBase 2 . fromIntegral $ n
@@ -60,3 +62,72 @@ isPerfectPower n = not . null . filter (\(b, a) -> (round a) ^ b == n) $ bases
 
 
 smallestR n = fst . head . filter (\(r, Just k) -> k > floor ((logBase 2 (fromIntegral n)) ^ 2)) . fmap (\r -> (r, maybeMultOrder n r)) $ [x | x<-[1..], gcd x n == 1]
+
+eulerTotient n = length [x | x <- [1..n], gcd n x == 1]
+
+-- | Little or Big endian polynoms
+data Poly a = LittlePoly [a] | BigPoly [a] deriving (Eq, Show) 
+
+degPoly (LittlePoly ls) = max 0 $ length ls - 1
+degPoly (BigPoly ls) = max 0 $ length ls - 1
+
+reverseEndianness (LittlePoly ls) = BigPoly . reverse $ ls
+reverseEndianness (BigPoly ls) = LittlePoly . reverse $ ls
+
+-- | Most significant coefficient
+mscoeff (LittlePoly []) = 0
+mscoeff (BigPoly []) = 0
+mscoeff (LittlePoly ls) = last ls
+mscoeff (BigPoly ls) = head ls
+
+nullPoly = LittlePoly []
+
+makeLittleEndian p@(LittlePoly ls) = p
+makeLittleEndian p = reverseEndianness p
+
+makeBigEndian p@(BigPoly ls) = p
+makeBigEndian p = reverseEndianness p
+
+addPoly p1 p2 = LittlePoly (addList lp1 lp2)
+  where
+    LittlePoly lp1 = makeLittleEndian p1
+    LittlePoly lp2 = makeLittleEndian p2
+
+negatePoly p = negate <$> p
+
+addList l [] = l
+addList [] l = l
+addList (l:ls) (l':ls') = (l + l'):(addList ls ls')
+
+diffPoly p = addPoly p . negatePoly
+
+extractMSCoeff p@(LittlePoly []) = p
+extractMSCoeff p@(BigPoly []) = p
+extractMSCoeff (LittlePoly ls) = LittlePoly (init ls)
+extractMSCoeff (BigPoly ls) = BigPoly (tail ls)
+
+scalePoly scalar = fmap (scalar *)
+
+instance Functor (Poly) where
+  fmap f (LittlePoly ls) = LittlePoly (fmap f ls)
+  fmap f (BigPoly ls) = BigPoly (fmap f ls)
+
+increaseDeg (LittlePoly ls) = LittlePoly (0:ls)
+increaseDeg (BigPoly ls) = BigPoly (ls ++ [0])
+
+increaseByDeg 0 p = p
+increaseByDeg n p = increaseByDeg (n-1) (increaseDeg p)
+
+polynomialDivision nm dnm
+  | degDen <= degNum = (quotient, rest)
+  | otherwise = (nullPoly, nm)
+    where
+      degDen = degPoly dnm
+      degNum = degPoly nm
+      degDiff = degNum - degDen
+      qval = mscoeff nm / mscoeff dnm
+      p = increaseByDeg degDiff $ LittlePoly [qval]
+      r = diffPoly (extractMSCoeff nm) . increaseByDeg degDiff . scalePoly qval . extractMSCoeff $ dnm
+      (q, rest) = polynomialDivision r dnm
+      quotient = addPoly p q
+      
