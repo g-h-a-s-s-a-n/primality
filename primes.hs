@@ -11,9 +11,6 @@ mygcd a b
     mn = min a b
     mx = max a b
     
-binom :: Integral a => a -> a -> a
-binom n k = product [(n - k) + 1 .. n] `div` product [2 .. k]
-
 recbinom :: Integral a => a -> a -> a
 recbinom _ 0 =1
 recbinom n k
@@ -66,3 +63,13 @@ smallestR n = fst . head . filter (\(r, Just k) -> k > floor (logBase 2 (fromInt
 
 eulerTotient n = length [x | x <- [1..n], gcd n x == 1]
 
+-- | Because 2 is added to the list manually in rdividen to drop all other even numbers checking
+aksPrime 2 = True
+aksPrime n = not (isPerfectPower n || rdividen) && (n <= r || not someAnotCongruent)
+  where
+    r = smallestR n
+    maxA = floor $ (sqrt . fromIntegral . eulerTotient) r * (logBase 2 . fromIntegral) n
+    rdividen = any (\k -> (n `mod` k) == 0) $ 2:[3,5 .. min r . floor . sqrt . fromIntegral $ n]
+    xr1 = (Poly [1] Little r) - 1
+    powPl = generatePolyPowModular xr1 n
+    someAnotCongruent = any (\a -> powPl a n /= (powPl 0 n + fromInteger a)) $ [1 .. maxA]
