@@ -138,12 +138,12 @@ binom :: Integral a => a -> a -> a
 binom n k = product [(n - k) + 1 .. n] `div` product [2 .. k]
 
 allCoeffs :: Integral a => a -> [a]
-allCoeffs p = (binom p) <$> [0 .. p]
+allCoeffs p = binom p <$> [0 .. p]
 
 -- | Generate the polynomial: (x+a)^n
 generatePolyPow a n = Poly cfs Little 0
   where
-    cfs = zipWith (*) ((a^) <$> [n,n-1..0]) ((binom n) <$> [0..n])
+    cfs = zipWith (*) ((a^) <$> [n,n-1..0]) (binom n <$> [0..n])
 
 remPoly p = snd . polynomialDivision div p
 

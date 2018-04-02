@@ -3,6 +3,7 @@ module Main where
 import Data.List
 import Data.Maybe
 import Polynomial
+import System.Environment
 
 mygcd a b
   | a == 0 || b == 0 = a + b
@@ -34,7 +35,6 @@ testPrime :: Integral a => a -> Bool
 testPrime p = length (filter (== 0) (coeff p)) == fromIntegral (p - 1)
 
 optimizedTestPrime p = genericLength (filter (== 0) (optCoeff p)) == (p `div` 2)
-main = return ()
 
 -- Find the smallest r s.t. n^k = 1 mod r for some k
 
@@ -70,6 +70,13 @@ aksPrime n = not (isPerfectPower n || rdividen) && (n <= r || not someAnotCongru
     r = smallestR n
     maxA = floor $ (sqrt . fromIntegral . eulerTotient) r * (logBase 2 . fromIntegral) n
     rdividen = any (\k -> (n `mod` k) == 0) $ 2:[3,5 .. min r . floor . sqrt . fromIntegral $ n]
-    xr1 = (Poly [1] Little r) - 1
-    powPl = generatePolyPowModular xr1 n
-    someAnotCongruent = any (\a -> powPl a n /= (powPl 0 n + fromInteger a)) $ [1 .. maxA]
+    xr1 = Poly [1] Little r - 1
+    powPl v k = normalizePoly $ generatePolyPowModular xr1 n v k
+    someAnotCongruent = any (\a -> powPl a n /= (powPl 0 n + fromInteger a)) [1 .. maxA]
+
+main = do
+  n <- getArgs
+  let k = smallestR . read . head $ n
+  print k
+  let e = eulerTotient k
+  print k
