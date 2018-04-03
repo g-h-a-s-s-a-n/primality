@@ -53,6 +53,11 @@ leastCoeff (Poly ls _ _) = head ls
 nullPoly :: Num i => Polynomial i a
 nullPoly = Poly [] Little 0
 
+-- | Defining a variable that can be usefull to define polynomials
+-- as in TeX notations. E.g. `y = x^2+4*x+5`
+x :: (Num i, Num a) => Polynomial i a
+x = Poly [1] Little 1
+
 removeSignificantZerosPoly :: (Integral i, Eq a, Num a) => Polynomial i a-> Polynomial i a
 removeSignificantZerosPoly p@(Poly [] _ _) = nullPoly
 removeSignificantZerosPoly p@(Poly (0:ls) Big _) = p{coeffs = ls}
@@ -150,7 +155,7 @@ binom n k = product [(n - k) + 1 .. n] `div` product [2 .. k]
 allCoeffs :: Integral a => a -> [a]
 allCoeffs p = binom p <$> [0 .. p]
 
--- | Generate the polynomial: (x+a)^n
+-- | Using binomial coefficients to generate the polynomial efficiently: (x+a)^n 
 generatePolyPow a n = Poly cfs Little 0
   where
     cfs = zipWith (*) ((a^) <$> [n,n-1..0]) (binom n <$> [0..n])
