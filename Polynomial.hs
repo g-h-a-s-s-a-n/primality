@@ -9,22 +9,28 @@ reverseEndianness Little = Big
 reverseEndianness Big = Little
 
 -- | Little or Big endian polynoms
-data Polynomial a = Poly
+data Polynomial i a = Poly
   { coeffs      :: [a]
   , endianness  :: Endianness
-  , shiftFactor :: Integer
+  , shiftFactor :: i
   } deriving (Show) 
 
-instance Functor Polynomial where
+instance Functor (Polynomial i) where
   fmap f p = p{coeffs = f <$> coeffs p}
 
-instance Num a => Num (Polynomial a) where
+instance (Integral i, Num a) => Num (Polynomial i a) where
   p + p' = addPoly  p p'
   p * p' = multPoly p p'
   signum = fmap signum
   fromInteger n = Poly [fromInteger n] Little 0
   negate = fmap negate
   abs = fmap abs
+
+instance (Integral i, Num a, Eq a) => Eq (Polynomial i a) where
+  a == b = coeffs a' == coeffs b' && shiftFactor a' == shiftFactor b'
+    where
+      a' = makeLittleEndian . normalizePoly $ a
+      b' = makeLittleEndian . normalizePoly $ b
 
 degPoly p = max 0 $ genericLength (coeffs p) + shiftFactor p - 1
 
@@ -44,21 +50,24 @@ leastCoeff (Poly [] _ _) = 0
 leastCoeff (Poly ls Big _) = last ls
 leastCoeff (Poly ls _ _) = head ls
 
+nullPoly :: Num i => Polynomial i a
 nullPoly = Poly [] Little 0
 
+removeSignificantZerosPoly :: (Integral i, Eq a, Num a) => Polynomial i a-> Polynomial i a
 removeSignificantZerosPoly p@(Poly [] _ _) = nullPoly
 removeSignificantZerosPoly p@(Poly (0:ls) Big _) = p{coeffs = ls}
 removeSignificantZerosPoly p
   | isLittleEndianPoly p && leadingCoeff p == 0 = removeSignificantZerosPoly p{coeffs = init . coeffs$ p}
   | otherwise = p
-
+  
+removeTrailingZerosPoly :: (Integral i, Eq a, Num a) => Polynomial i a-> Polynomial i a
 removeTrailingZerosPoly p@(Poly [] _ _) = nullPoly
 removeTrailingZerosPoly p@(Poly (0:ls) Little _) = p{coeffs = ls, shiftFactor = 1 + shiftFactor p}
 removeTrailingZerosPoly p
   | isBigEndianPoly p && (last . coeffs) p == 0 = removeTrailingZerosPoly p{coeffs = init . coeffs $ p, shiftFactor = 1 + shiftFactor p}
   | otherwise = p
 
-normalizePoly :: (Eq a, Num a) => Polynomial a -> Polynomial a
+normalizePoly :: (Integral i, Eq a, Num a) => Polynomial i a -> Polynomial i a
 normalizePoly = removeTrailingZerosPoly . removeSignificantZerosPoly
 
 makeLittleEndian p
@@ -106,10 +115,11 @@ dropLeastTerm p
 
 scalePoly scalar = fmap (scalar *)
 
-increaseDeg  p = p{shiftFactor = 1 + shiftFactor p}
+increaseDeg = increaseByDeg 1
 
 increaseByDeg n p = p{shiftFactor = n + shiftFactor p}
 
+polynomialDivision :: (Integral i, Num a) => (a -> a -> a) -> Polynomial i a -> Polynomial i a -> (Polynomial i a, Polynomial i a)
 polynomialDivision op nm dnm
   | degDen <= degNum = (quotient, rest)
   | otherwise = (nullPoly, nm)
@@ -165,8 +175,3 @@ generatePolyPowModular q m a n = modPolyInt q m $ polyPowModular q m p (n `div` 
     p = modPolyInt q m $ generatePolyPow a degQ
     p' = modPolyInt q m $ generatePolyPow a (n `mod` degQ)
 
-instance (Num a, Eq a) => Eq (Polynomial a) where
-  a == b = coeffs a' == coeffs b'
-    where
-      a' = makeLittleEndian . normalizePoly $ a
-      b' = makeLittleEndian . normalizePoly $ b

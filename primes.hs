@@ -44,7 +44,7 @@ multOrder v m = fst . head . filter (\(k, x) -> x == 1 || x == 0) $ ls
 
 maybeMultOrder v m
   | not $ areCoprime v m  = Nothing
-  | otherwise = fmap fst . listToMaybe . dropWhile (\(k, x) -> not (x == 1 || x == 0)) $ ls
+  | otherwise = fmap fst . listToMaybe . filter (\(k, x) -> x == 1 || x == 0) $ ls
   where
     ls = (\k -> (k, v^k `mod` m)) <$> [1 ..]
 
@@ -61,7 +61,7 @@ isPerfectPower n = any (\(b, a) -> round a ^ b == n) bases
 
 smallestR n = fst . head . filter (\(r, Just k) -> k > floor (logBase 2 (fromIntegral n) ^ 2)) . fmap (\r -> (r, maybeMultOrder n r)) $ [x | x<-[1..], gcd x n == 1]
 
-eulerTotient n = length [x | x <- [1..n], gcd n x == 1]
+eulerTotient n = genericLength [x | x <- [1..n], gcd n x == 1]
 
 -- | Because 2 is added to the list manually in rdividen to drop all other even numbers checking
 aksPrime 2 = True
@@ -75,8 +75,10 @@ aksPrime n = not (isPerfectPower n || rdividen) && (n <= r || not someAnotCongru
     someAnotCongruent = any (\a -> powPl a n /= (powPl 0 n + fromInteger a)) [1 .. maxA]
 
 main = do
-  n <- getArgs
-  let k = smallestR . read . head $ n
+  n <- fmap read <$> getArgs
+  let k = smallestR <$> n
   print k
-  let e = eulerTotient k
+  let e = eulerTotient <$> k
   print k
+  let p = aksPrime <$> n
+  print p
