@@ -179,4 +179,3 @@ generatePolyPowModular q m a n = modPolyInt q m $ polyPowModular q m p (n `div` 
     degQ = degPoly q
     p = modPolyInt q m $ generatePolyPow a degQ
     p' = modPolyInt q m $ generatePolyPow a (n `mod` degQ)
-

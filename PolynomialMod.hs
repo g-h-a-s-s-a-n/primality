@@ -41,18 +41,20 @@ matchModularity p p' = context
       return (cQ, cV)
 
 
-generatePolyPowMod a n m = (`mod` m) <$> generatePolyPow a n
+generatePolyPowMod m a n = removeTrailingZerosPoly $ (`mod` m) <$> generatePolyPow a n
 
 remPoly p = snd . polynomialDivision div p
 
 -- | p = res mod(q, m)
-modPolyInt q m p  = (`mod` m) <$> remPoly p q
+modPolyInt q m p  = removeTrailingZerosPoly $ (`mod` m) <$> remPoly p q
 
 -- | (x+a)^n = res mod (q, m)
-generatePolyPowModular q m a n
-  | n < degQ = p
-  | otherwise = undefined
+generatePolyModPower q m a n = p * p' ^ (remainingDeg `div` (degQ - 1)) * p''
   where
     degQ = degPoly q
-    p = generatePolyPowMod a degQ m
-    p' = modPolyInt q m p
+    divRes = n `div` (degQ - 1)
+    p = PolyMod (generatePolyPowMod m a (n `mod` degQ)) (Just q) (Just m)
+    remainingDeg = n - (n `mod` degQ)
+    p' = PolyMod (generatePolyPowMod m a (min remainingDeg (degQ - 1))) (Just q) (Just m)
+    p'' = PolyMod (generatePolyPowMod m a (remainingDeg `mod` (degQ - 1))) (Just q) (Just m)
+            
