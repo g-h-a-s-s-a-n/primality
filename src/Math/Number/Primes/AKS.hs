@@ -1,7 +1,7 @@
-module Primes where
+module Math.Number.Primes.AKS where
 
-import Polynomial
-import PolynomialMod
+import Math.Polynomial.Univariate
+import Math.Polynomial.Univariate.Modular
 import Data.Maybe
 import Data.List
 

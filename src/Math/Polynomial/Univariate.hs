@@ -1,4 +1,4 @@
-module Polynomial where
+module Math.Polynomial.Univariate where
 
 import Data.List
 

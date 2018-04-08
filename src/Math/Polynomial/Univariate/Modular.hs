@@ -1,7 +1,8 @@
-module PolynomialMod where
+module Math.Polynomial.Univariate.Modular where
 
 import Data.List
-import Polynomial hiding (remPoly, modPolyInt)
+import Math.Arithmetic.Modular
+import Math.Polynomial.Univariate hiding (remPoly, modPolyInt)
 
 
 -- | Little or Big endian polynoms
@@ -14,7 +15,8 @@ data PolynomialMod i a = PolyMod
   } deriving (Show, Eq) 
 
 instance Functor (PolynomialMod i) where
-  fmap f p = p{mainPoly = fmap f $ mainPoly p, quotPoly = fmap (fmap f) $ quotPoly p}
+  fmap f p = p{ mainPoly =      f <$> mainPoly p
+              , quotPoly = fmap f <$> quotPoly p}
 
 instance (Integral i, Integral a) => Num (PolynomialMod i a) where
   p + p' = case matchModularity p p' of
@@ -26,7 +28,7 @@ instance (Integral i, Integral a) => Num (PolynomialMod i a) where
   signum = fmap signum
   fromInteger n = PolyMod (Poly [fromInteger n] Little 0) Nothing Nothing
   negate = fmap negate
-  abs = fmap abs
+  abs = fmap abs -- The abs notion is not really well defined on polynomials
 
 matchModularity p p' = context
   where
@@ -43,7 +45,8 @@ matchModularity p p' = context
 
 generatePolyPowMod m a n = removeTrailingZerosPoly $ (`mod` m) <$> generatePolyPow a n
 
-remPoly p = snd . polynomialDivision div p
+remPoly' m p = snd . polynomialDivision (modularDiv m) p
+remPoly p = snd . polynomialDivision (div) p
 
 -- | p = res mod(q, m)
 modPolyInt q m p  = removeTrailingZerosPoly $ (`mod` m) <$> remPoly p q
