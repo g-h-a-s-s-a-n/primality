@@ -1,6 +1,6 @@
 module Main where
 
-import Primes
+import Math.Number.Primes.AKS
 import System.Environment
 
 main = do

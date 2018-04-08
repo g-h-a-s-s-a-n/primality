@@ -15,6 +15,7 @@ data EllipticPoint a = PositiveECPt
 
 type EllipticPoint' a = Maybe (a, Bool)
 
+getX :: EllipticPoint' a -> Maybe a
 getX = fmap fst
 getY (EC a b) pt = do
   (x, side) <- pt
@@ -29,8 +30,8 @@ negateECpt pt = do
   (x, side) <- pt
   return (x, not side)
 
-addEC _ _ Nothing p = p
-addEC _ _ p Nothing = p
+addEC _ Nothing p = p
+addEC _ p Nothing = p
 addEC ec@(EC a b) p p' = do
   xp <- getX p
   xp' <- getX p'
