@@ -1,4 +1,4 @@
-module Math.Number.Primes.AKS where
+module Math.NumberTheory.Primes.AKS where
 
 import Math.Polynomial.Univariate
 import Math.Polynomial.Univariate.Modular
